@@ -1,0 +1,553 @@
+openapi: 3.0.3
+info:
+  title: AutoMaster API
+  description: Пълна документация на REST API услугите за система за управление на автосервиз (AutoMaster). Включва CRUD операции, странициране, сортиране, динамично търсене и автентикация.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Локален сървър за разработка
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  # ==============================
+  # ПОТРЕБИТЕЛИ (USERS)
+  # ==============================
+  /api/users/register:
+    post:
+      summary: Регистрация на нов майстор
+      description: Създава нов потребителски профил в системата.
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Успешна регистрация
+        '400':
+          description: Невалидни данни (Validation Error)
+          
+  /api/users/login:
+    post:
+      summary: Вход в системата (Логин)
+      description: Проверява имейл и парола и връща данните на логнатия потребител.
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+      responses:
+        '200':
+          description: Успешен вход
+        '401':
+          description: Грешен имейл или парола
+
+  # ==============================
+  # КЛИЕНТИ (CLIENTS)
+  # ==============================
+  /api/clients:
+    get:
+      summary: Извличане и търсене на клиенти
+      description: Връща списък с клиенти на даден майстор. Поддържа търсене по име/фамилия, странициране и сортиране.
+      tags:
+        - Clients
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - name: firstName
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: lastName
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortByParam'
+      responses:
+        '200':
+          description: Списък с клиенти
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+    post:
+      summary: Добавяне на нов клиент
+      tags:
+        - Clients
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Client'
+      responses:
+        '201':
+          description: Клиентът е добавен успешно
+
+  /api/clients/{id}:
+    put:
+      summary: Редакция на клиент
+      tags:
+        - Clients
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Client'
+      responses:
+        '200':
+          description: Данните са обновени успешно
+    delete:
+      summary: Изтриване на клиент
+      tags:
+        - Clients
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '200':
+          description: Успешно изтриване
+
+  # ==============================
+  # АВТОМОБИЛИ (VEHICLES)
+  # ==============================
+  /api/vehicles:
+    get:
+      summary: Извличане и търсене на автомобили
+      tags:
+        - Vehicles
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - name: regNumber
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: brandModel
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortByParam'
+      responses:
+        '200':
+          description: Списък с автомобили
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vehicle'
+    post:
+      summary: Добавяне на нов автомобил
+      tags:
+        - Vehicles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Vehicle'
+      responses:
+        '201':
+          description: Автомобилът е добавен успешно
+
+  /api/vehicles/{id}:
+    put:
+      summary: Редакция на автомобил
+      tags:
+        - Vehicles
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Vehicle'
+      responses:
+        '200':
+          description: Успешна редакция
+    delete:
+      summary: Изтриване на автомобил
+      tags:
+        - Vehicles
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '200':
+          description: Успешно изтриване
+
+  # ==============================
+  # УСЛУГИ (SERVICES)
+  # ==============================
+  /api/services:
+    get:
+      summary: Извличане на ценоразпис (Услуги)
+      tags:
+        - Services
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortByParam'
+      responses:
+        '200':
+          description: Списък с услуги
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+    post:
+      summary: Добавяне на нова услуга
+      tags:
+        - Services
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Service'
+      responses:
+        '201':
+          description: Услугата е добавена успешно
+
+  /api/services/{id}:
+    put:
+      summary: Редакция на услуга
+      tags:
+        - Services
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Service'
+      responses:
+        '200':
+          description: Успешна редакция
+    delete:
+      summary: Изтриване на услуга
+      tags:
+        - Services
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '200':
+          description: Успешно изтриване
+
+  # ==============================
+  # РЕМОНТИ (REPAIRS)
+  # ==============================
+  /api/repairs:
+    get:
+      summary: Извличане на ремонти
+      tags:
+        - Repairs
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: regNumber
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortByParam'
+      responses:
+        '200':
+          description: Списък с ремонти
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Repair'
+    post:
+      summary: Записване на нов ремонт
+      tags:
+        - Repairs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Repair'
+      responses:
+        '201':
+          description: Ремонтът е добавен успешно
+
+  /api/repairs/{id}:
+    put:
+      summary: Редакция на ремонт
+      tags:
+        - Repairs
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Repair'
+      responses:
+        '200':
+          description: Успешна редакция
+    delete:
+      summary: Изтриване на ремонт
+      tags:
+        - Repairs
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '200':
+          description: Успешно изтриване
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+      description: Таен ключ за достъп до API услугите.
+
+  parameters:
+    UserIdParam:
+      name: userId
+      in: query
+      required: true
+      description: ID на логнатия потребител (майстор)
+      schema:
+        type: integer
+        minimum: 1
+    IdPathParam:
+      name: id
+      in: path
+      required: true
+      description: ID на записа
+      schema:
+        type: integer
+        minimum: 1
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Номер на страница (започва от 0)
+      schema:
+        type: integer
+        default: 0
+    SizeParam:
+      name: size
+      in: query
+      required: false
+      description: Брой записи на страница
+      schema:
+        type: integer
+        default: 10
+    SortByParam:
+      name: sortBy
+      in: query
+      required: false
+      description: Колона за сортиране
+      schema:
+        type: string
+        default: id
+
+  schemas:
+    User:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - passwordHash
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        email:
+          type: string
+          format: email
+          maxLength: 100
+        passwordHash:
+          type: string
+          maxLength: 255
+          
+    UserLogin:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    Client:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - phone
+        - userId
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        phone:
+          type: string
+          minLength: 7
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          maxLength: 100
+        userId:
+          type: integer
+          minimum: 1
+
+    Vehicle:
+      type: object
+      required:
+        - regNumber
+        - brandModel
+        - clientId
+        - userId
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        regNumber:
+          type: string
+          minLength: 5
+          maxLength: 15
+        brandModel:
+          type: string
+          minLength: 3
+          maxLength: 100
+        clientId:
+          type: integer
+          minimum: 1
+        userId:
+          type: integer
+          minimum: 1
+
+    Service:
+      type: object
+      required:
+        - serviceName
+        - price
+        - userId
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        serviceName:
+          type: string
+          minLength: 3
+          maxLength: 100
+        price:
+          type: number
+          format: double
+          minimum: 0
+        userId:
+          type: integer
+          minimum: 1
+
+    Repair:
+      type: object
+      required:
+        - repairDate
+        - status
+        - vehicleId
+        - serviceId
+        - userId
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        repairDate:
+          type: string
+          format: date
+        status:
+          type: string
+          minLength: 3
+          maxLength: 20
+        vehicleId:
+          type: integer
+          minimum: 1
+        serviceId:
+          type: integer
+          minimum: 1
+        userId:
+          type: integer
+          minimum: 1
+
+    ProblemDetails:
+      type: object
+      description: Стандартизиран формат за грешки (RFC 7807)
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
