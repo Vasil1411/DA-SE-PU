@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <title>Football Forum</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+  
+
+
+
+    <div id="auth-section">
+        <div id="login-section">
+            <h2>Вход</h2>
+            <input type="text" id="login-username" placeholder="Потребителско име">
+            <input type="password" id="login-password" placeholder="Парола">
+            <button onclick="login()">Влез</button>
+            <p>Нямаш профил? <a href="#" onclick="showRegister()">Регистрирай се</a></p>
+        </div>
+
+        <div id="register-section" class="hidden">
+            <h2>Регистрация</h2>
+            <input type="text" id="reg-username" placeholder="Потребителско име">
+            <input type="email" id="reg-email" placeholder="Имейл">
+            <input type="password" id="reg-password" placeholder="Парола">
+            <button onclick="register()">Регистрирай се</button>
+            <p>Вече имаш профил? <a href="#" onclick="showLogin()">Влез</a></p>
+        </div>
+    </div>
+
+    <div id="main-section">
+        <div class="header-actions">
+            <h1>Отбори</h1>
+            <div id="auth-buttons"></div>
+        </div>
+        
+        <div class="search-container" style="margin: 15px 0; display: flex; gap: 10px;">
+            <input type="text" id="search-input" placeholder="Търси по име или държава..." style="margin-bottom: 0;">
+            <button onclick="triggerSearch()" style="width: auto; padding: 0 20px;">Търси</button>
+        </div>
+        
+        <div id="admin-actions" class="hidden">
+            <hr>
+            <h3>Добави нов отбор</h3>
+            <input type="text" id="create-team-name" placeholder="Име на отбора">
+            <input type="text" id="create-team-country" placeholder="Държава">
+            <button onclick="createTeam()" style="background-color: #28a745;">Създай</button>
+        </div>
+
+        <hr>
+        <div id="teams-list"></div>
+
+        <div id="pagination-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+            <button id="btn-prev" onclick="changePage(-1)" style="width: auto; padding: 5px 15px;">◀ Предишна</button>
+            <span id="page-info">Страница 1</span>
+            <button id="btn-next" onclick="changePage(1)" style="width: auto; padding: 5px 15px;">Следваща ▶</button>
+        </div>
+    </div>
+
+    <div id="details-section" class="hidden">
+        <button onclick="closeDetails()" style="width: auto; padding: 5px 15px; margin-bottom: 15px;">⬅ Назад</button>
+        
+        <div class="card" style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; background: #fff;">
+            <h2 id="view-name">Име на отбора</h2>
+            <p><strong>Държава:</strong> <span id="view-country">-</span></p>
+            <p><small>Създател: <span id="view-creator">-</span></small></p>
+            
+            <div id="team-management-buttons" class="hidden">
+                <button onclick="showEditForm()" style="background-color: #ffc107; color: black; margin-top: 10px;">Редактирай отбора</button>
+                <button onclick="deleteTeam()" style="background-color: #dc3545; margin-top: 5px;">Изтрий отбора</button>
+            </div>
+
+            <div id="edit-form" class="hidden" style="margin-top: 20px; border-top: 1px dashed #ccc; padding-top: 15px;">
+                <h3>Редакция на отбора</h3>
+                <input type="text" id="edit-team-name" placeholder="Ново име">
+                <input type="text" id="edit-team-country" placeholder="Нова държава">
+                <button onclick="saveEdit()" style="background-color: #007bff;">Запази промените</button>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <h2>Публикации за отбора</h2>
+            
+            <div style="margin: 15px 0; display: flex; gap: 10px;">
+                <input type="text" id="post-search-input" placeholder="Търси в публикациите за този отбор..." style="margin-bottom: 0;">
+                <button onclick="triggerPostSearch()" style="width: auto; padding: 0 20px; background-color: #17a2b8;">Търси</button>
+            </div>
+            
+            <div id="post-create-container" style="margin-bottom: 20px; background: #e9ecef; padding: 15px; border-radius: 8px;">
+                <h4>Напиши нова публикация (минимум 10 символа):</h4>
+                <textarea id="post-content-input" rows="3" style="width: 100%; border-radius: 6px; padding: 8px; box-sizing: border-box; resize: vertical;" placeholder="Сподели нещо за отбора..."></textarea>
+                <button onclick="createPost()" style="background-color: #28a745; margin-top: 8px;">Публикувай</button>
+            </div>
+
+            <div id="post-edit-container" class="hidden" style="margin-bottom: 20px; background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba;">
+                <h4>Редактирай твоята публикация:</h4>
+                <textarea id="post-edit-input" rows="3" style="width: 100%; border-radius: 6px; padding: 8px; box-sizing: border-box; resize: vertical;"></textarea>
+                <button onclick="savePostEdit()" style="background-color: #ffc107; color: black; margin-top: 8px;">Запази промените</button>
+                <button onclick="cancelPostEdit()" style="background-color: #6c757d; margin-top: 5px;">Отказ</button>
+            </div>
+
+            <div id="posts-list"></div>
+
+            <div id="post-pagination-controls" class="pagination-controls">
+    <button id="btn-post-prev" onclick="changePostPage(-1)">◀ Предишни постове</button>
+    <span id="post-page-info">Страница 2 от 2</span>
+    <button id="btn-post-next" onclick="changePostPage(1)">Следващи постове ▶</button>
+                </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
