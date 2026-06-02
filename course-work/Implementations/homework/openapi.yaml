@@ -1,553 +1,278 @@
 openapi: 3.0.3
 info:
-  title: AutoMaster API
-  description: Пълна документация на REST API услугите за система за управление на автосервиз (AutoMaster). Включва CRUD операции, странициране, сортиране, динамично търсене и автентикация.
+  title: FootballForum API
+  description: Пълна документация на REST API услугите за Футболния форум. Включва пълен CRUD за отбори, постове и коментари, както и система за харесвания и JWT автентикация.
   version: 1.0.0
 servers:
-  - url: http://localhost:8080
-    description: Локален сървър за разработка
+  - url: https://localhost:5001
+    description: Локален сървър
 
 security:
-  - ApiKeyAuth: []
+  - BearerAuth: []
 
 paths:
   # ==============================
-  # ПОТРЕБИТЕЛИ (USERS)
+  # USERS (Автентикация)
   # ==============================
-  /api/users/register:
+  /api/Users/register:
     post:
-      summary: Регистрация на нов майстор
-      description: Създава нов потребителски профил в системата.
-      tags:
-        - Users
+      summary: Регистрация на нов потребител
+      tags: [Users]
+      security: [] # Публичен достъп
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/User'
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
       responses:
-        '201':
-          description: Успешна регистрация
-        '400':
-          description: Невалидни данни (Validation Error)
-          
-  /api/users/login:
+        '200': { description: 'Успешна регистрация' }
+        '400': { description: 'Грешка при валидацията' }
+
+  /api/Users/login:
     post:
       summary: Вход в системата (Логин)
-      description: Проверява имейл и парола и връща данните на логнатия потребител.
-      tags:
-        - Users
+      tags: [Users]
+      security: [] # Публичен достъп
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/UserLogin'
+            schema: { $ref: '#/components/schemas/LoginRequest' }
       responses:
-        '200':
-          description: Успешен вход
-        '401':
-          description: Грешен имейл или парола
+        '200': { description: 'Успешен вход, връща JWT токен' }
+        '401': { description: 'Грешно име или парола' }
 
   # ==============================
-  # КЛИЕНТИ (CLIENTS)
+  # TEAMS (Пълен CRUD за отбори)
   # ==============================
-  /api/clients:
+  /api/Teams:
     get:
-      summary: Извличане и търсене на клиенти
-      description: Връща списък с клиенти на даден майстор. Поддържа търсене по име/фамилия, странициране и сортиране.
-      tags:
-        - Clients
+      summary: Извличане на всички отбори (Read)
+      tags: [Teams]
+      security: []
       parameters:
-        - $ref: '#/components/parameters/UserIdParam'
-        - name: firstName
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: lastName
-          in: query
-          required: false
-          schema:
-            type: string
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - $ref: '#/components/parameters/SortByParam'
+        - { name: p.PageNumber, in: query, schema: { type: integer, default: 1 } }
+        - { name: p.PageSize, in: query, schema: { type: integer, default: 10 } }
+        - { name: searchTerm, in: query, schema: { type: string } }
       responses:
-        '200':
-          description: Списък с клиенти
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Client'
+        '200': { description: 'Списък с отбори' }
     post:
-      summary: Добавяне на нов клиент
-      tags:
-        - Clients
+      summary: Създаване на нов отбор (Create)
+      tags: [Teams]
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/Client'
+            schema: { $ref: '#/components/schemas/CreateTeamDto' }
       responses:
-        '201':
-          description: Клиентът е добавен успешно
+        '200': { description: 'Отборът е създаден успешно' }
+        '401': { description: 'Неоторизиран достъп' }
 
-  /api/clients/{id}:
-    put:
-      summary: Редакция на клиент
-      tags:
-        - Clients
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Client'
-      responses:
-        '200':
-          description: Данните са обновени успешно
-    delete:
-      summary: Изтриване на клиент
-      tags:
-        - Clients
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-        - $ref: '#/components/parameters/UserIdParam'
-      responses:
-        '200':
-          description: Успешно изтриване
-
-  # ==============================
-  # АВТОМОБИЛИ (VEHICLES)
-  # ==============================
-  /api/vehicles:
+  /api/Teams/{id}:
     get:
-      summary: Извличане и търсене на автомобили
-      tags:
-        - Vehicles
+      summary: Извличане на конкретен отбор по ID (Read)
+      tags: [Teams]
+      security: []
       parameters:
-        - $ref: '#/components/parameters/UserIdParam'
-        - name: regNumber
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: brandModel
-          in: query
-          required: false
-          schema:
-            type: string
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - $ref: '#/components/parameters/SortByParam'
+        - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
-        '200':
-          description: Списък с автомобили
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Vehicle'
-    post:
-      summary: Добавяне на нов автомобил
-      tags:
-        - Vehicles
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Vehicle'
-      responses:
-        '201':
-          description: Автомобилът е добавен успешно
-
-  /api/vehicles/{id}:
+        '200': { description: 'Данни за отбора' }
+        '404': { description: 'Отборът не е намерен' }
     put:
-      summary: Редакция на автомобил
-      tags:
-        - Vehicles
+      summary: Редактиране на отбор (Update)
+      tags: [Teams]
       parameters:
-        - $ref: '#/components/parameters/IdPathParam'
+        - { name: id, in: path, required: true, schema: { type: integer } }
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/Vehicle'
+            schema: { $ref: '#/components/schemas/CreateTeamDto' }
       responses:
-        '200':
-          description: Успешна редакция
+        '200': { description: 'Отборът е обновен' }
+        '403': { description: 'Нямате права за редакция' }
     delete:
-      summary: Изтриване на автомобил
-      tags:
-        - Vehicles
+      summary: Изтриване на отбор (Delete)
+      tags: [Teams]
       parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-        - $ref: '#/components/parameters/UserIdParam'
+        - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
-        '200':
-          description: Успешно изтриване
+        '200': { description: 'Отборът е изтрит' }
+        '403': { description: 'Нямате права за изтриване' }
 
   # ==============================
-  # УСЛУГИ (SERVICES)
+  # POSTS (Пълен CRUD за постове)
   # ==============================
-  /api/services:
+  /api/Posts:
     get:
-      summary: Извличане на ценоразпис (Услуги)
-      tags:
-        - Services
+      summary: Извличане на всички постове (Read)
+      tags: [Posts]
+      security: []
       parameters:
-        - $ref: '#/components/parameters/UserIdParam'
-        - name: name
-          in: query
-          required: false
-          schema:
-            type: string
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - $ref: '#/components/parameters/SortByParam'
+        - { name: p.PageNumber, in: query, schema: { type: integer, default: 1 } }
+        - { name: p.PageSize, in: query, schema: { type: integer, default: 10 } }
+        - { name: searchTerm, in: query, schema: { type: string } }
       responses:
-        '200':
-          description: Списък с услуги
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Service'
-    post:
-      summary: Добавяне на нова услуга
-      tags:
-        - Services
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Service'
-      responses:
-        '201':
-          description: Услугата е добавена успешно
+        '200': { description: 'Списък с всички постове' }
 
-  /api/services/{id}:
-    put:
-      summary: Редакция на услуга
-      tags:
-        - Services
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Service'
-      responses:
-        '200':
-          description: Успешна редакция
-    delete:
-      summary: Изтриване на услуга
-      tags:
-        - Services
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-        - $ref: '#/components/parameters/UserIdParam'
-      responses:
-        '200':
-          description: Успешно изтриване
-
-  # ==============================
-  # РЕМОНТИ (REPAIRS)
-  # ==============================
-  /api/repairs:
+  /api/Posts/team/{teamId}:
     get:
-      summary: Извличане на ремонти
-      tags:
-        - Repairs
+      summary: Извличане на постове за конкретен отбор
+      tags: [Posts]
+      security: []
       parameters:
-        - $ref: '#/components/parameters/UserIdParam'
-        - name: status
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: regNumber
-          in: query
-          required: false
-          schema:
-            type: string
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - $ref: '#/components/parameters/SortByParam'
+        - { name: teamId, in: path, required: true, schema: { type: integer } }
       responses:
-        '200':
-          description: Списък с ремонти
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Repair'
-    post:
-      summary: Записване на нов ремонт
-      tags:
-        - Repairs
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Repair'
-      responses:
-        '201':
-          description: Ремонтът е добавен успешно
+        '200': { description: 'Списък с постове за отбора' }
 
-  /api/repairs/{id}:
-    put:
-      summary: Редакция на ремонт
-      tags:
-        - Repairs
+  /api/Posts/create/{teamId}:
+    post:
+      summary: Създаване на нов пост (Create)
+      tags: [Posts]
       parameters:
-        - $ref: '#/components/parameters/IdPathParam'
+        - { name: teamId, in: path, required: true, schema: { type: integer } }
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/Repair'
+            schema: { $ref: '#/components/schemas/CreatePostDto' }
       responses:
-        '200':
-          description: Успешна редакция
-    delete:
-      summary: Изтриване на ремонт
-      tags:
-        - Repairs
+        '200': { description: 'Постът е създаден успешно' }
+
+  /api/Posts/{id}:
+    get:
+      summary: Извличане на конкретен пост по ID (Read)
+      tags: [Posts]
+      security: []
       parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-        - $ref: '#/components/parameters/UserIdParam'
+        - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
-        '200':
-          description: Успешно изтриване
+        '200': { description: 'Данни за поста' }
+        '404': { description: 'Постът не е намерен' }
+    put:
+      summary: Редактиране на пост (Update)
+      tags: [Posts]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePostDto' }
+      responses:
+        '200': { description: 'Постът е обновен' }
+        '400': { description: 'Постът не е намерен или не сте собственик' }
+    delete:
+      summary: Изтриване на пост (Delete)
+      tags: [Posts]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: 'Постът е изтрит' }
+
+  # ==============================
+  # COMMENTS (CRUD за коментари)
+  # ==============================
+  /api/Comments/create/{postId}:
+    post:
+      summary: Добавяне на коментар към пост (Create)
+      tags: [Comments]
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCommentDto' }
+      responses:
+        '200': { description: 'Коментарът е добавен' }
+
+  /api/Comments/{id}:
+    put:
+      summary: Редактиране на коментар (Update)
+      tags: [Comments]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCommentDto' }
+      responses:
+        '200': { description: 'Коментарът е обновен' }
+        '400': { description: 'Грешка при редакция' }
+    delete:
+      summary: Изтриване на коментар (Delete)
+      tags: [Comments]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: 'Коментарът е изтрит' }
+        '400': { description: 'Грешка при изтриване' }
+
+  # ==============================
+  # LIKES (Харесвания)
+  # ==============================
+  /api/Likes/like:
+    post:
+      summary: Харесване на пост
+      tags: [Likes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LikeRequestDto' }
+      responses:
+        '200': { description: 'Постът е харесан' }
+        '400': { description: 'Грешка' }
+
+  /api/Likes/unlike:
+    post:
+      summary: Премахване на харесване от пост
+      tags: [Likes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LikeRequestDto' }
+      responses:
+        '200': { description: 'Харесването е премахнато' }
+        '400': { description: 'Грешка' }
 
 components:
   securitySchemes:
-    ApiKeyAuth:
-      type: apiKey
-      in: header
-      name: X-API-KEY
-      description: Таен ключ за достъп до API услугите.
-
-  parameters:
-    UserIdParam:
-      name: userId
-      in: query
-      required: true
-      description: ID на логнатия потребител (майстор)
-      schema:
-        type: integer
-        minimum: 1
-    IdPathParam:
-      name: id
-      in: path
-      required: true
-      description: ID на записа
-      schema:
-        type: integer
-        minimum: 1
-    PageParam:
-      name: page
-      in: query
-      required: false
-      description: Номер на страница (започва от 0)
-      schema:
-        type: integer
-        default: 0
-    SizeParam:
-      name: size
-      in: query
-      required: false
-      description: Брой записи на страница
-      schema:
-        type: integer
-        default: 10
-    SortByParam:
-      name: sortBy
-      in: query
-      required: false
-      description: Колона за сортиране
-      schema:
-        type: string
-        default: id
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Въведете JWT токена тук'
 
   schemas:
-    User:
+    RegisterRequest:
       type: object
-      required:
-        - firstName
-        - lastName
-        - email
-        - passwordHash
       properties:
-        id:
-          type: integer
-          minimum: 1
-        firstName:
-          type: string
-          minLength: 2
-          maxLength: 50
-        lastName:
-          type: string
-          minLength: 2
-          maxLength: 50
-        email:
-          type: string
-          format: email
-          maxLength: 100
-        passwordHash:
-          type: string
-          maxLength: 255
-          
-    UserLogin:
+        username: { type: string }
+        password: { type: string }
+    LoginRequest:
       type: object
-      required:
-        - email
-        - password
       properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-
-    Client:
+        username: { type: string }
+        password: { type: string }
+    CreateTeamDto:
       type: object
-      required:
-        - firstName
-        - lastName
-        - phone
-        - userId
       properties:
-        id:
-          type: integer
-          minimum: 1
-        firstName:
-          type: string
-          minLength: 2
-          maxLength: 50
-        lastName:
-          type: string
-          minLength: 2
-          maxLength: 50
-        phone:
-          type: string
-          minLength: 7
-          maxLength: 20
-        email:
-          type: string
-          format: email
-          maxLength: 100
-        userId:
-          type: integer
-          minimum: 1
-
-    Vehicle:
+        name: { type: string }
+        country: { type: string }
+    CreatePostDto:
       type: object
-      required:
-        - regNumber
-        - brandModel
-        - clientId
-        - userId
       properties:
-        id:
-          type: integer
-          minimum: 1
-        regNumber:
-          type: string
-          minLength: 5
-          maxLength: 15
-        brandModel:
-          type: string
-          minLength: 3
-          maxLength: 100
-        clientId:
-          type: integer
-          minimum: 1
-        userId:
-          type: integer
-          minimum: 1
-
-    Service:
+        title: { type: string }
+        content: { type: string }
+    CreateCommentDto:
       type: object
-      required:
-        - serviceName
-        - price
-        - userId
       properties:
-        id:
-          type: integer
-          minimum: 1
-        serviceName:
-          type: string
-          minLength: 3
-          maxLength: 100
-        price:
-          type: number
-          format: double
-          minimum: 0
-        userId:
-          type: integer
-          minimum: 1
-
-    Repair:
+        content: { type: string }
+    LikeRequestDto:
       type: object
-      required:
-        - repairDate
-        - status
-        - vehicleId
-        - serviceId
-        - userId
       properties:
-        id:
-          type: integer
-          minimum: 1
-        repairDate:
-          type: string
-          format: date
-        status:
-          type: string
-          minLength: 3
-          maxLength: 20
-        vehicleId:
-          type: integer
-          minimum: 1
-        serviceId:
-          type: integer
-          minimum: 1
-        userId:
-          type: integer
-          minimum: 1
-
-    ProblemDetails:
-      type: object
-      description: Стандартизиран формат за грешки (RFC 7807)
-      properties:
-        type:
-          type: string
-        title:
-          type: string
-        status:
-          type: integer
-        detail:
-          type: string
-        timestamp:
-          type: string
-          format: date-time
+        postId: { type: integer }
